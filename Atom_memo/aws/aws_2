@@ -1,0 +1,50 @@
+# EC2でサーバを構築する方法(Wordpress)
+
+### 1. VPCの作成<br>
+- EC2インスタンスを作成するために，まずネットワーク環境のVPCを作成する必要がある<br>
+- __サービス > VPC > VPCの作成 > d__<br>
+- __ここでは，1個のパブリックサブネットを持つVPCを作成していく__<br>
+
+### サブネットマスクとは
+- まず，__IPアドレス__ は，__32bit__ で構成されている<br>
+- __クラスAは，[11111111 00000000 00000000 00000000]，[255, 0, 0, 0]__，<br>
+- __クラスBは，[11111111 11111111 00000000 00000000]，[255, 255, 0, 0]__，<br>
+- __クラスCは，[11111111 11111111 11111111 00000000]，[255, 255, 255, 0]__，<br>
+<br>
+- このように，__ビット"1"がネットワーク部，ビット"0"がホスト部__ となっている
+- 例えば，__「192.168.1.1」__ は，__クラスCのIPアドレス__ であり，<br>__サブネットマスクが「255.255.255.0」__ であることがわかる
+- __サブネットマスクは，IPアドレスの32ビットのうち，何ビットをネットワークアドレスに使うのかを定義するための32ビットの数値のことである__<br>
+- [https://www.infraexpert.com/study/ip6.html]
+- [http://blog.serverworks.co.jp/tech/2013/05/23/vpc_beginner-2/]
+
+### マークダウンのプレビューは，( _ctrl + shift + m_ )
+
+Type on the __left__, see it _rendered_ on the __right__.
+
+This is a
+[link](https://github.com).
+
+
+- and this is
+- a list
+
+~~yoshida~~
+
+yoshida<br>kensuke
+
+
+:tada: :fireworks:
+
+### こんな感じで数式も入れることができる( _Latex_ )に従う
+
+$\Delta{y}$
+
+$$W = I \bullet V$$
+
+```python:
+a = a + b
+```
+
+## 参考文献
+- [atomをMarkdownエディタように設定作り込んでみた](https://qiita.com/yuki476/items/f81f6c03f9e9b00cfacc)
+- [チートシート](https://qiita.com/Qiita/items/c686397e4a0f4f11683d)

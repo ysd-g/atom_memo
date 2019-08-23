@@ -1,0 +1,216 @@
+# 前処理（2019年8月2日更新）
+
+### ※前提として，前処理を実施する前に，訓練データとテストデータを分けておく<br>
+
+<br>
+
+前処理に必要なライブラリをインポート
+```python
+import sys
+sys.path.append('/home/yoshida/.pyenv/versions/3.6.6/lib/python3.6/site-packages')
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn import datasets, preprocessing
+from sklearn.model_selection import train_test_split
+%matplotlib inline
+plt.style.use('ggplot')
+```
+<br>
+
+- データの読み込み
+```python
+data = pd.read_csv("kc_house_data.csv")
+df = pd.DataFrame(data)
+```
+
+
+__ここで本来は，訓練データとテストデータに分割して，<br>それぞれに前処理を施すが，今回はまとめちゃう__<br><br>
+
+- データフレームから、取得したい列を指定
+
+```python
+df = df.loc[:, ['price', 'bedrooms', 'bathrooms', 'sqft_living', 'sqft_lot']]
+```
+<br>
+
+- Null値があるかをチェック
+```python
+df.isnull().sum()
+```
+<br>
+
+- 欠損値を削除する場合
+```python
+ある行の列に１つでも欠損値があると、その行を削除
+df = df.dropna()
+
+欠損値の数を指定して削除（下の例の場合、同じ行に3つ以上欠損値があるとその行を削除）
+df.dropna(thresh=3)
+
+特定の列を基準に、その列が欠損していない部分だけを残す
+df = df[df['col'].isnull()=False]
+```
+<br>
+
+- 別の値で補完する場合
+``` python
+定数で補完
+df['col'] = df['col'].fillna(3)
+
+平均値で補完する場合
+df['col'] = df['col'].fillna(df['col'].mean())
+
+中央値で補完する場合
+df['col'] = df['col'].fillna(df['col'].median())
+
+最頻値で補完する場合
+df['col'] = df['col'].fillna(df['col'].mode())
+```
+<br>
+
+- 基本統計量の確認
+```python
+df.describe()
+```
+<br>
+
+- 相関係数の計算
+```python
+df.corr()
+```
+<br>
+
+- 相関係数を可視化
+```python
+sns.pairplot(df, plot_kws={'alpha': 0.2}) #alphaは透明度
+```
+<br>
+
+- ヒートマップを用いて，データの相関を可視化
+```python
+plt.figure(figsize=(10, 8))
+sns.heatmap(df.corr(), annot=True, cmap='Blues')
+```
+<br>
+
+- 箱ひげ図でデータの散らばり具合を確認
+```python
+plt.figure(figsize=(10, 10))
+sns.boxplot(df['price'], orient='v', width=0.5)
+```
+<br>
+
+- ヒストグラムによる目的変数のばらつきを可視化
+```python
+plt.figure(figsize=(12, 8))
+sns.distplot(df['price'])
+```
+<br>
+
+__箱ひげ図の結果より，飛び抜けた値が存在している__ <br>
+__データ分析で飛び抜けた値を考慮してしまうと，何かと不都合が発生してしまうから，外れ値を除外する方法が必要__ <br>
+
+__外れ値を処理する方法は，いくつかあるが，ここでは"四分位数"と"標準偏差"を基にした処理の方法を述べる__ <br>
+<br>
+
+- カラム名を取得
+``` python
+print(df.columns)
+```
+<br>
+
+- 四分位数を用いた方法（四分位数の1.5倍以上離れているモノを除外）
+```python
+def outlier_iqr(df, columns=None):
+    if columuns == None:
+        columns = df.columns
+
+    for col in columns:
+        q1 = df[col].describe()['25%']
+        q3 = df[col].describe()['75%']
+
+        # 四分位範囲
+        igr = q3 - q1
+
+        outlier_min = q1 - iqr * 1.5
+        outlier_max = q3 + iqr * 1.5
+
+        # 範囲から外れている値を除く
+        df = df[(df[col] >= outlier_min) & (df[col] <= outlier_max)]
+
+    return df
+```
+<br>
+
+- 標準偏差を使った方法（平均値から標準偏差のn倍離れているモノを除外）
+```python
+def outlier_std(df, thresh=3, columns=None):
+    if columns == None:
+        columns = df.columns
+
+    print(thresh)
+
+    for col in columns:
+        mean = df[col].mean()
+        std = df[col].std()
+
+        # 平均値から標準偏差の何倍離れているかを計算
+        border = (np.abs(df[col] - mean)) / std # absは絶対値
+
+        # 標準偏差の3倍以上離れているデータを除外
+        df = df[(border < 3)]
+
+    return df
+```
+<br>
+
+- 結果
+```python
+print("before", df.shape)
+df = outlier_std(df, ['price'])
+print("after", df.shape)
+```
+<br>
+
+- 再度，箱ひげ図とヒストグラムでデータの散らばり具合を確認
+```python
+# 箱ひげ図
+plt.figure(figsize=(10, 10))
+sns.boxplot(df['price'], orient='v', width=0.5)
+
+# ヒストグラム
+plt.figure(figsize=(12, 8))
+sns.distplot(df['price'])
+```
+<br>
+
+__次に，正規分布するように形を整える作業を行う__<br>
+__モデルによっては，正規分布に従うことを前提としたものがあり，ここでは，対数変換を行う__<br>
+__対数変換は，正規分布に従わないデータでも，正規分布に変換するもの__<br>
+```python
+df['price'] = np.log1p(df['price'])
+df['price'].head()
+```
+
+```python
+# 結果をプロット
+plt.figure(figsize=(12, 8))
+sns.distplot(df['price'])
+```
+<br>
+
+- スケーリング
+```python
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
+
+for col in df.columns:
+    scaler = StandardScaler()
+    df[col] = scaler.fit_transform(np.array(df[col].values).reshape(-1, 1))
+```
+
+
+## 参考文献
+- [Youtube_ableprograming_前処理](https://www.youtube.com/watch?v=6snZmtL4keg)

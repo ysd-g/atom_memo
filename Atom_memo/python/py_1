@@ -1,0 +1,496 @@
+# Python
+
+仮想マシンをAWSのクラウド環境に作成する
+
+### （1）Pythonの仮想環境を作成・実行
+- Homeディレクトリに移動
+- Pythonの仮想環境は，__"anaconda3/envs/"__ にある
+```python
+$ conda create -n py_v36    ※"py_v36の部分は，任意の仮想環境名""
+$ conda info -e   ※"仮想環境一覧表示"
+$ source activate py_v36    ※"(py_v36) -> ...と表示されたらOK"
+
+(py_v36) -> conda install django    # djangoに必要なファイル群をインストール
+(py_v36) -> exit    # 仮想環境を抜ける
+```
+<br>
+
+### （2）PythonのコードをAtomで書いて，仮想環境で実行する方法
+- __Desktop/master_research/Atom_memo/python/python_code/__ に __age.py__ を作成したとする
+- __age.py__ は，20歳以上ならお酒を買える，20歳よりも小さいなら，お酒は変えないという判断をするコード
+```python
+(py_v36) -> cd Desktop/master_research/Atom_memo/python/python_code/
+(py_v36) -> python age.py   ※"これで，pyファイルが実行される""
+```
+<br>
+
+### （3）仮想環境にDjangoをインストールする
+```python
+(py_v36) -> pip install django
+```
+<br>
+
+### （4）Djangoプロジェクトを作成する
+```python
+(py_v36) -> djangp-admin startproject MyBlogApp
+(py_v36) -> dir   ※"MyBlogAppができているのがわかる"
+(py_v36) -> cd MyBlogApp    ※"MyBlogApp(D)，manage.pyができているのがわかる”
+
+
+※"MyBlogApp(D)には，「__init__.py」，「settings.py」，「urls.py」，「wsgi.py」のファイルがある"
+※"「__init__.py」は，Pythonのパッケージであることを知らせる"
+※"「settings.py」は，設定ファイル．ファイル構成やアクセス制御を行う"
+※"「urls.py」は，アプリケーション（ユーザ登録やログインなど）をどのURLで呼ぶのかを設定
+※"「wsgi.py」は，Apache・Nginx・Gunicornなどの他のWebサーバと，Djangoとの連携を書くところ"
+```
+<br>
+
+### （5）Djangoを起動する
+```python
+(py_v36) -> cd MyBlogApp    ※"manage.pyがある場所”
+(py_v36) -> python manage.py runserver    ※"「http://127.0.0.1:8000」にアクセス"
+```
+<br>
+
+### （6）初期設定
+- __MyBlogApp/MyBlogApp/settings.py__
+```python
+※"「settings.py」を以下のように修正"
+LANGUAGE_CODE = 'ja'
+TIME_ZONE = 'Asia/Tokyo'
+ ```
+ ```python
+(py_v36) -> python manage.py migrate    ※"データベースで使用するテーブルを作成する"
+```
+<br>
+
+### （7）Applicationを追加
+```python
+(py_v36) -> cd MyBlogApp    ※"manage.pyがある場所”
+(py_v36) -> python manage.py startapp posts   ※"「posts」という名前のApplicationを作成"
+(py_v36) -> ls    ※"新しく「posts」というフォルダができているのが確認できる"
+(py_v36) -> cd posts    ※"「posts」フォルダにも色々なファイルが入っている"
+```
+- __MyBlogApp/posts/apps.py__
+```python
+※"「posts」フォルダの「app.py」を見てみると，「PostsConfig」というクラスがある"
+※"「PostsConfig」は，「posts」の中核となるクラスである"
+※"追加したApplicationをプロジェクトから呼べるようにしなくてはならない"
+```
+<br>
+
+- __MyBlogApp/MyBlogApp/settings.py__
+```python
+※ "「MyBlogApp(P)/MyBlogApp/settings.py」"の"「INSTALLED_APPS」"に"「post.apps.PostsConfig」"と書き込む
+
+INSTALLED_APPS = [
+    ...,
+    ...,
+    'posts.apps.PostsConfig'
+]
+```
+<br>
+
+### （8）Application「posts」のビューを作成する
+- __MyBlogApp/posts/views.py__
+
+```python
+※"「views.py」を以下のように修正"
+
+from django.shortcuts import render
+from django.http import HttpResponse
+
+def index(request):
+    return HttpResponse("Hello World! このページは投稿のインデックスです")
+ ```
+<br>
+
+### （9）ビューを呼び出すための，URLについて記述する
+- __MyBlogApp/posts/__ に，__urls.py__ という新しいファイルを作成する
+- __MyBlogApp/posts/urls.py__
+- __Application（urls.py）から，viewsファイルのindex関数を呼び出すための設定を行う__
+```python
+※"「urls.py」を以下のように修正"
+
+from django.urls import path
+from . import views           ※"同じ階層のviews.pyを読み込む"
+
+urlpatterns = [
+    path('', views.index, name='index'),
+
+    ※"第一引数：特に文字を指定されなければ，"
+    ※"第二引数：「views.py」の「index関数」を呼ぶ"
+    ※"第三引数：「index」という名前をつける"
+]
+ ```
+ [Django公式ページ＿urlについて](https://docs.djangoproject.com/ja/2.2/intro/tutorial03/)
+<br>
+
+- __Project（urls.py）から，postsのApplication（urls.py）を参照する設定を行う__
+- __MyBlogApp/urls.py__
+
+```python
+from django.contrib import admin
+from django.urls import path, include ※'他のファイルを使うときに，「include」は必要'
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('posts/', include('posts.urls'))
+    ※'検索バーに「posts/」と入力されたら，「posts.urls」を参照する'
+]
+```
+- __ここまで終わったら，「$ python manage.py runserver」を実行__
+- __「http://127.0.0.1:8000/posts/」 と入力__
+<br>
+
+### （10）Application「posts」のテンプレートを用意する
+- __(8)では，直接ビューを書き込んでいたが，実際は「テンプレート」を用意して，ブラウザに返してあげる__
+- __1. 「posts」のApplication内に，「templates」というフォルダを作成__
+- __2. 「templates」フォルダ内に，「Application」と同じ名前（今回だと，posts）というフォルダを作成する<br>※これは，Djangoの独自のルール__
+- __3. 「templates/posts/」に，「index.html」というファイルを作成する__
+<br>
+
+- __MyBlogApp/posts/templates/posts/index.html__
+```html
+<!DOCTYPE html>
+<html lang = "ja-jp">
+<head>
+  <title>投稿一覧</title>
+</head>
+<body>
+  <h2>これは投稿一覧のページです</h2>
+</body>
+</html>
+```
+<br>
+
+```python
+※"「views.py」を以下のように修正"
+
+from django.shortcuts import render
+
+from django.http import HttpResponse
+
+def index(request):
+    # return HttpResponse("Hello World! このページは投稿のインデックスです")
+    return render(request, 'posts/index.html')
+ ```
+ - __ここまで終わったら，「$ python manage.py runserver」を実行__
+ - __「http://127.0.0.1:8000/posts/」 と入力__
+ <br>
+<br>
+
+
+### （11）テーブルを作るためのスクリプト”migrationファイル”を追加して，ブログの記事を格納するためのテーブルの定義をし，テーブルを作る（migrationする）
+- __MyBlogApp/posts/models.py__
+
+```python
+※"「models.py」を以下のように修正"
+from django.db import models
+
+#投稿を格納する
+class Post(models.Model):
+    title = models.CharField(max_length=100) #タイトル
+    published = models.DateTimeField() #投稿日
+    image = models.ImageField(upload_to='media/') #写真
+    body = models.TextField() #記事
+
+ ```
+- __モデルのファイルを元にして，データベースのテーブルを作るための命令を，ファイルとして作るための操作を行っていく__
+```python
+(py_v36) -> python manage.py makemigrations   
+※"新しい定義ファイルがあった時(models.py)，DBに格納するのに必要なファイルを自動生成するというコマンド"
+```
+
+- __"post/migrations/0001_initial.py"という以下のようなmigrationファイルができている__<br>
+- __データベースのテーブルを定義して，テーブルの名前は"Post"，5つのフィールドがある__<br>
+```python
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    initial = True
+
+    dependencies = [
+    ]
+
+    operations = [
+        migrations.CreateModel(
+            name='Post',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('title', models.CharField(max_length=100)),
+                ('published', models.DateTimeField()),
+                ('image', models.ImageField(upload_to='media/')),
+                ('body', models.TextField()),
+            ],
+        ),
+    ]
+```
+- __この設定ファイル(migrationファイル)をDjangoのmigrateに渡してあげると，バックエンドでDBと通信し，<br>新しくテーブルを作ったり，その中にフィールドを作成したり，などしてくれる__<br>
+- __設定ファイルを基に，テーブルを作成・更新__
+```python
+(py_v36) -> python manage.py migrate   
+※"新しい定義ファイルがあった時(models.py)，DBに格納するのに必要なファイルを自動生成するというコマンド
+```
+
+- __本当に，テーブルが作成されたかどうかを確認するには，データベースに問い合わせる必要がある__
+```python
+"※Djangoでは，sqlite3というのがある"
+(py_v36) -> cd MyBlogApp (プロジェクト)
+(py_v36) -> ls "※db.sqlite3というファイルがあるのを確認できる"
+(py_v36) -> sqlite3 db.sqlite3 "sqlite3を使用して，DB接続"
+sqlite> .tables "※テーブルを確認"
+sqlite> select * from posts_post
+```
+- __"models.py"を定義する → "makemigrations"のコマンド → "migrate" → "db.sqlite3"という流れ__<br>
+<br>
+
+### （12）DBにデータを登録するために，管理者の設定を行う
+- __"python manage.py runserver" を実行し，「 http://127.0.0.1:8000/admin/ 」に接続__
+- __ログインIDとパスワードを求められるが，そんなものはないので，それをつくっていく__
+- __サーバを停止して，管理者（superuser）を作る作業を行う__
+```python
+(py_v36) -> python manage.py createsuperuser "自分はysd"
+```
+- __再度「 http://127.0.0.1:8000/admin/ 」に接続し，入力する → 管理者サイトへ行ける__
+
+<br>
+
+- __投稿追加や変更などの投稿に関するメニューを追加するために，設定ファイルの変更を次に行う__
+- __投稿の管理機能を追加するためには，「posts/admin.py」を編集する__
+<br>
+
+```python
+"※「posts/admin.py」を編集"
+from django.contrib import admin
+
+from .models import Post
+"# 同じpostsフォルダ内にあるmodels.pyを指す"
+"# models.py内のPostクラスを読み込む"
+
+admin.site.register(Post)
+```
+- __この後，adminの管理画面にいくと，「Posts」というものが現れ，投稿できるようになっている__
+- __しかし，この状態であると，タイトルが"Post Object"のままで，タイトルがわからない__
+- __そのため，投稿のタイトルを一覧に表示できるようにするには，「posts/models.py」を編集__
+<br>
+
+```python
+"※posts/models.py"
+from django.db import models
+
+#投稿を格納する
+class Post(models.Model):
+    title = models.CharField(max_length=100) #タイトル
+    published = models.DateTimeField() #投稿日
+    image = models.ImageField(upload_to='media/') #写真
+    body = models.TextField() #記事
+
+    def __str__(self):
+        return self.title
+    "# __str__とすることで，文字列をページに返してあげることができる"
+```
+<br>
+
+- __この後，adminの管理画面にいくと，投稿のタイトルが表示されるようになっている__
+
+<br>
+
+### （13）ページに投稿の一覧を表示していくように，プログラムを改変する
+- __そこで，「Template Engine」というものを使う__
+- __モデルが，DBからデータを取り出し，テンプレートとモデルを組み合わせて，動的にページを表示するもの__
+- __「posts/views.py」を編集する__
+```python
+"※「posts/views.py」"
+from django.shortcuts import render
+
+from django.http import HttpResponse
+
+from .models import Post
+
+def index(request):
+    # return HttpResponse("Hello World! このページは投稿のインデックスです")
+    posts = Post.objects.order_by('-published')
+    # published("投稿日")を軸として，降順に並び替える
+    return render(request, 'posts/index.html', {'posts': posts})
+
+```
+- __「templates/posts/index.html」を編集する__
+```html
+"※templates/posts/index.html"
+
+<!DOCTYPE html>
+<html lang = "ja-jp">
+<head>
+  <title>投稿一覧</title>
+</head>
+<body>
+  <h1>ようこそ、吉田のブログへ</h1>
+  <h2>最新の投稿</h2>
+  {% for post in posts.all %}
+    {{ post.title }}
+  {% endfor %}
+</body>
+</html>
+```
+[Django Template Engine](https://docs.djangoproject.com/ja/1.11/topics/templates/)
+
+### （14）ページを見やすくするように，表示する文字を減らしたり，改行する
+- __現時点では，改行もしていないし，bodyが長いときに全て表示していたりしている__
+- __そこで，「templates/posts/index.html」と「posts/models.py」を編集する__
+```html
+"※templates/posts/index.html"
+
+<!DOCTYPE html>
+<html lang = "ja-jp">
+<head>
+  <title>投稿一覧</title>
+</head>
+<body>
+  <h1>ようこそ、吉田のブログへ</h1>
+  <h2>最新の投稿</h2>
+  {% for post in posts.all %}
+    {{ post.title }}
+    <br /><br />              '改行'
+    {{ post.published }}
+    <br /><br />
+    {{ post.summary }}        'models.pyで「summary」を使用する'
+    <br /><br />
+  {% endfor %}
+</body>
+</html>
+
+```
+
+```python
+"※「posts/views.py」"
+
+from django.db import models
+
+#投稿を格納する
+class Post(models.Model):
+    title = models.CharField(max_length=100) #タイトル
+    published = models.DateTimeField() #投稿日
+    image = models.ImageField(upload_to='media/') #写真
+    body = models.TextField() #記事
+
+    def __str__(self):
+        return self.title
+    # __str__とすることで，文字列をページに返してあげることができる
+
+    def summary(self):
+        return self.body[:50]
+    # bodyの先頭50文字を返してあげる
+```
+
+### （15）ページに写真を追加する
+- __写真のようなstaticファイルの扱い方は，けっこうややこしい__
+- __まず「templates/posts/index.html」を編集する__
+```html
+<!DOCTYPE html>
+<html lang = "ja-jp">
+<head>
+  <title>投稿一覧</title>
+</head>
+<body>
+  <h1>ようこそ、吉田のブログへ</h1>
+  <h2>最新の投稿</h2>
+  {% for post in posts.all %}
+    {{ post.title }}
+    <br /><br />
+    {{ post.published }}
+    <br /><br />
+    <img src="{{ post.image.url }}" />
+    {{ post.summary }}
+    <br /><br />
+  {% endfor %}
+</body>
+</html>
+```
+- __しかし，これでは写真は出てこない__
+- __写真は，プロジェクト/media/に格納されている__
+- media/＊＊.jpg
+- __「呼び出すURL設定」＋「フォルダ指定」の設定の追加をしなくてはいけない__
+- __編集するファイルは，「MyBlogApp/MyBlogApp/settings.py」，「MyBlogApp/MyBlogApp/urls.py」__
+
+```python
+"MyBlogApp/MyBlogApp/urls.py"
+"staticファイルを扱うための設定を行う"
+
+from django.contrib import admin
+from django.urls import path, include
+from django.conf.urls.static import static #<-------------------
+from django.conf import settings #<----------------------
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('posts/', include('posts.urls'))
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+"static(静的なファイルを表示するURLの設定，静的なファイルをどこに保持しているか)"
+```
+```python
+"MyBlogApp/MyBlogApp/settings.py"
+"一番下までスクロール"
+
+STATIC_URL = '/static/'
+MEDIA_URL = '/pics/'
+MEDIA_ROOT = BASE_DIR
+
+'BASE_DIRは，プロジェクトの一番上の階層を指す'
+'ちなみに，BASE_DIRの宣言は，settings.pyの上の方にかいてある'
+```
+- __これで，写真を表示することができる（詳しくは，Udemyの[3日間でできるDjangoの30]）__
+
+<br>
+
+### （16）クリックすると，投稿の詳細ページに行く（画面遷移）
+- __Djangoでは，それぞれの投稿にIDが自動で振られる__
+- __「templates/posts/index.html」上で，{{ post.id }}とすると，IDを取得できる__<br>
+
+- __これから実装するのは，「http://127.0.0.1/posts/3 」と入力したら，「投稿ID:3」の記事を表示する機能__
+```html
+"※templates/posts/index.html"
+
+<!DOCTYPE html>
+<html lang = "ja-jp">
+<head>
+  <title>投稿一覧</title>
+</head>
+<body>
+  <h1>ようこそ、吉田のブログへ</h1>
+  <h2>最新の投稿</h2>
+  {% for post in posts.all %}
+    {{ post.title }}
+    <br /><br />              '改行'
+    {{ post.published }}
+    <br /><br />
+    {{ post.summary }}        'models.pyで「summary」を使用する'
+    <br /><br />
+  {% endfor %}
+</body>
+</html>
+
+```
+
+```python
+"※「posts/views.py」"
+
+from django.db import models
+
+#投稿を格納する
+class Post(models.Model):
+    title = models.CharField(max_length=100) #タイトル
+    published = models.DateTimeField() #投稿日
+    image = models.ImageField(upload_to='media/') #写真
+    body = models.TextField() #記事
+
+    def __str__(self):
+        return self.title
+    # __str__とすることで，文字列をページに返してあげることができる
+
+    def summary(self):
+        return self.body[:50]
+    # bodyの先頭50文字を返してあげる
+```

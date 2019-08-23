@@ -1,0 +1,256 @@
+# Pythonの文法（2019年8月13日更新）
+
+
+<br>
+
+__・データフレームから該当するデータを抽出(1)__
+```python
+df_1 = df[(df['sweet_category'] == 1)]
+```
+<br>
+
+__・データフレームから該当するデータを抽出(2)__
+```python
+print(df[df['age'] < 25])
+```
+<br>
+
+__・データフレームから該当するデータを抽出(3)__
+```python
+print(df.query('24 <= age < 50'))
+```
+<br>
+
+__・データフレームから該当するデータを抽出(4)__
+```python
+# 特定の文字列を含むもの
+print(df.query('name.str.contains("o")', engine='python'))
+# Bob、とか
+
+# 特定の文字列で終わるもの
+print(df.query('name.str.endswith("b")', engine='python'))
+# Bob、とか
+
+# 特定の文字列で始まるもの
+print(df.query('name.str.startswith("C")', engine='python'))
+# CHarlie、とか
+
+# 正規表現のパターンにマッチするもの
+print(df.query('name.str.match(".*i.*e")', engine='python'))
+# Alice、Charlieとか
+```
+<br>
+
+
+__・データフレームから該当するデータを抽出(5)__
+```python
+print(df.query('index % 2 == 0'))
+# indexが、2で割り切れるもの
+```
+<br>
+
+__・データフレームの列名を取得__
+```python
+print(df.columns)
+```
+<br>
+
+__・データフレームの列の値を二乗__
+```python
+df['size'] = df['size']**2
+```
+<br>
+
+__・4つのデータフレームを結合し，ランダムに並び替えてindexを再振り（1）__
+```python
+df_new = pd.concat([df_1, df_2, df_3, df_4])
+df_new = df_new.sample(frac=1).reset_index(drop=True)
+```
+<br>
+
+__・データフレームdfに，別のdfをくっつける方法（2）__
+```python
+df.append(df3)
+# 下記のようにすると，indexを再振りする
+df.append(df3, ignore_index=True)
+```
+<br>
+
+__・データフレームdfに新しく列を追加し，値を挿入__
+```python
+# 新しく"jobs"という列を作り，その中に値を入れている
+df['jobs'] = ['engineer', 'sales']
+```
+<br>
+
+__・リストを作成し，dfの固定の列の値を順に塗り替える__
+```python
+# dfのindexを64, 80, 85, 90とする
+list = [80, 100, 98, 79]
+df['test'] = list
+# 64 80
+# 80 100
+# 85 98
+# 90 79
+```
+<br>
+
+__・多クラスの混合行列を作成__
+```python
+from sklearn.metrics import confusion_matrix
+clf = grid_search.best_estimator_
+pred = clf.predict(X_test)
+print(confusion_matrix(y_test, pred))
+```
+<br>
+
+__・データフレームから、取得したい列を指定__
+
+```python
+df = df.loc[:, ['price', 'bedrooms', 'bathrooms', 'sqft_living', 'sqft_lot']]
+```
+<br>
+
+__・indexのリストを取得する__
+```python
+indexes = df_smp.index.values
+print(indexes)
+# [64, 122, 142, 258, 812, ...]
+```
+<br>
+
+__・取得したindexに該当する行を、データフレームから削除する__
+```python
+df = df.drop(indexes)
+```
+<br>
+
+__・dropで列を削除する__
+```python
+# "name"の列を削除
+dropped_df = df.drop("name", axis=1)
+```
+<br>
+
+__・dropで行を削除する__
+```python
+# 140〜145行目を削除
+dropped_df = df.drop(range(140, 146))
+```
+<br>
+
+__・基本的なfor文__
+```python
+l = ['Alice', 'Bob', 'Charlie']
+
+for name in l:
+  if name == 'Bob':
+    print("BREAK")
+    break
+  print(name)
+
+# 結果
+# Alice BREAK
+
+
+for name in l:
+  if name == 'Bob':
+    print('SKIP')
+    continue
+  print(name)
+
+# 結果
+# Alice SKIP Charlie
+
+
+for i in range(3):
+  print(i)
+
+# 結果
+# 0, 1, 2
+
+
+for i in range(10, 13):
+  print(i)
+
+# 結果
+# 10, 11, 12
+```
+<br>
+
+__・enumerate()関数を使ったfor文__
+```python
+for i, name in enumerate(l):
+  print(i, name)
+
+# 結果
+# 0 Alice
+# 1 Bob
+# 2 Charlie
+
+for i, name in enumerate(l, 5):
+  print(i, name)
+
+# 結果
+# 5 Alice
+# 6 Bob
+# 7 Charlie
+```
+<br>
+
+__・zip()関数を使ったfor文__
+```python
+names = ['Alice', 'Bob', 'Charlie']
+ages = [23, 22, 27]
+points = [100, 97, 99]
+for name, age, point in zip(names, ages, points):
+  print(name, age, point)
+
+# 結果
+# Alice 23 100
+# Bob 22 97
+# Chaelie 27 99
+
+for name in enumerate(l, 5):
+  print(i, name)
+
+# 結果
+# 5 Alice
+# 6 Bob
+# 7 Chaelie
+```
+<br>
+
+__・リスト内包表記__
+```python
+squares = [i**2 for i in range(5)]
+print(squares)
+# 結果
+# [0, 1, 4, 9, 16]
+
+squares = []
+for i in range(5):
+  squares.append(i**2)
+print(squares)
+# 結果
+# [0, 1, 4, 9, 16]
+```
+<br>
+
+__・乱数__
+```python
+import random
+
+# 整数intの乱数
+print([random.randint(0, 10) for i in range(5)])
+# [8, 5, 2, 9, 7]
+
+print([random.random() for i in range(5)])
+# [0.55345, 0.32245, ...]
+
+# データフレームの数だけ浮動小数点の乱数を生成
+rand_list = [random.uniform(80, 100) for i in range(df.size)]
+```
+
+## 参考文献
+- [Youtube_ableprograming_前処理](https://www.youtube.com/watch?v=6snZmtL4keg)
